@@ -1,72 +1,66 @@
-const { request, response } = require('express');
+const {request, response} = require('express');
+const bcrypt = require('bcrypt')
 const pool = require('../db/connection');
-const {usersQueries} = require('../models/users');
+const { usersQueries } = require('../models/users');
 
-//const users = [ //crear arreglo
-  //{ id: 1, name: 'Jeni GR' }, //los registro que se va a almacenar
-  //{ id: 2, name: 'Jen GR' },
-  //{ id: 3, name: 'Lalis ig' },
+const saltRounds = 10;
+//const users = [
+  //{id: 1, name: 'John Doe'},
+  //{id: 2, name: 'Jane Doe'},
+  //{id: 3, name: 'Bob Smith'},
 //];
 
+const getAllUsers = async (req = request, res = response) =>{
+    let conn;
+    try{
+        conn = await pool.getConnection();
+        const users = await conn.query(usersQueries.getAll);
 
-// paraObtener todos los usuarios
-const getAllUsers = async (req = request, res = response) => {
- let conn; 
-try{
-  conn = await pool.getConnection();
-  const users= await conn.query(usersQueries.getAll );
-  
-  res.send(users);
-
-} catch (error){
-  res.status(500).send(error);
-  return;
-} finally{
- if (conn) conn.end();
+        res.send(users);
+    }catch(error){
+        res.status(500).send(error);
+        return;
+    }finally{
+        if (conn) conn.end();
+    }
 }
-};
 
-// para Obtener un usuario por ID
-const getUserById = async (req = request, res = response) => {
-  const { id } = req.params; ;//se acceda en el solicitud atreves de req
-  //se tiene que validar un numero por id
 
-  if (isNaN(id)) {
+const getUserById = async (req = request, res= response) => {
+  const {id} = req.params;
+
+  if(isNaN(id)){
     res.status(400).send('Invalid ID');
     return;
   }
 
   let conn;
-  try{
+  try {
     conn = await pool.getConnection();
-    const user = await conn.query(usersQueries.getById, [+id]);
-
-    if (user.length === 0) {
+    const user = await conn.query(usersQueries.getById, [+ID]);
+    
+    if(user.length === 0){
       res.status(404).send('User not found');
       return;
-    }
-
+    } 
     res.send(user);
-  }catch (error) {
+  } catch (error) {
     res.status(500).send(error);
-  }finally{
-    if(conn) conn.end();
-  }
-
-  //hacer un arrgelo donde pasa un fincion deonde debe terner TRUBUTO Y QUE REPRESENTA EL ARRGELO
- // const user = users.find((user) => user.id === +id);
-  //si el variable de usuario termine el valor si a ningino se debe avisar al users
-  
-};
-
-// paraAgregar un nuevo usuario
-const addUser = async (req = request, res = response) => {
-  const { username, password, email } = req.body;
-  if (!username || !password || !email) {
-    res.status(400).send('Name is required');
     return;
+  }finally {
+    if (conn) conn.end();
   }
+}
 
+// Crear un nuevo usuario
+const addUser = async (req = request, res = response) => {
+    const { username, password, email } = req.body;
+
+    if (!username || !password || !email) {
+      res.status(400).send("Bad request. The Name field is missing.");
+      return; 
+    }
+        
 let conn;  
   try{
     conn = await pool.getConnection();
@@ -76,15 +70,15 @@ let conn;
       res.status(409).send('Username already exits');
       return;
     }
+    const hashPasssword = await bcrypt.hash(password, saltRounds);
 
-    const newUser = await conn.query(usersQueries.create, [username, password, email]);
+    const newUser = await conn.query(usersQueries.create, [username, hashPasssword, email]);
     if(newUser.affectedRows === 0){
       res.status(500).send('User could not be created');
       return;
     }
-    //console.log(newUser);
 
-    res.status(201).send("user created succesfully"); 
+    res.status(201).send("User created succesfully"); 
 
   }catch (error){
     res.status(500).send(error);
@@ -94,11 +88,43 @@ let conn;
   }
 };
 
-// Actualizar un usuario existente
+const loginUser = async (req = request, res = response) =>{
+  const {username, password} = req.body;
+
+  if(!username || !password){
+    res.status(400).send('Username and Password are mandatory!');
+    return;
+  }
+
+  let conn;
+  try{
+    conn = await pool.getConnection();
+
+    const user = await conn.query(usersQueries.getByUsername,[username]);
+    if(user.length === 0){
+      res.status(400).send('Bad username or password');
+      return;
+    }
+
+    const passwordMatch = await bcrypt.compare(password, user[0].password);
+    if(!passwordMatch){
+      res.status(403).send('Bad username or password');
+      return;
+    }
+    res.send('Loged in!');
+  }catch(error){
+    res.status(500).send(error);
+  }finally{
+    if(conn) conn.end();
+  }
+}
+
+// Actualizar datos de un usuario
 const updateUser = async (req = request, res = response) => {
-  const {id } = req.params;
+  const {id} = req.params;
   const {username} = req.body;
-  if (isNaN(id) || !username) {
+
+  if(isNaN(id) || !username){
     res.status(400).send('Invalid request');
     return;
   }
@@ -127,14 +153,9 @@ const updateUser = async (req = request, res = response) => {
 }
 };
 
-// Eliminar un usuario
+//Eliminar un usuario
 const deleteUser = async (req = request, res = response) => {
-  const { id } = req.params;
-
-  if (isNaN(id)) {
-    res.status(400).send('Invalid request');
-    return;
-  }
+  const {id} = req.params;
 
   let coon;
   try{
@@ -159,5 +180,5 @@ const deleteUser = async (req = request, res = response) => {
     if (conn) conn.end();
   }
 };
-
-module.exports = { getAllUsers, getUserById, addUser, updateUser, deleteUser };
+  
+module.exports = { getAllUsers, getUserById, addUser, loginUser, updateUser, deleteUser}; 

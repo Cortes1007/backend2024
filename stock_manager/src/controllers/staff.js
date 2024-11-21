@@ -53,7 +53,6 @@ const addStaff = async (req = request, res = response) => {
     try {
         conn = await pool.getConnection();
 
-        // Verificar que `user_id` existe en la tabla referenciada
         const foreignExists = await conn.query('SELECT * FROM users WHERE id = ?', [user_id]);
         if (foreignExists.length === 0) {
             res.status(400).send('User ID does not exist');
@@ -95,7 +94,7 @@ const updateStaff = async (req = request, res = response) => {
             return;
         }
 
-        // Verificar que `user_id` existe en la tabla referenciada
+        // Verificar que user_id existe en la tabla referenciada
         const foreignExists = await conn.query('SELECT * FROM users WHERE id = ?', [user_id]);
         if (foreignExists.length === 0) {
             res.status(400).send('User ID does not exist');
@@ -147,4 +146,4 @@ const deleteStaff = async (req = request, res = response) => {
     }
 };
 
-module.exports = { getAllStaff, getStaffById, addStaff, updateStaff, deleteStaff };
+module.exports = { getAllStaff, getStaffById, addStaff, updateStaff, deleteStaff };
