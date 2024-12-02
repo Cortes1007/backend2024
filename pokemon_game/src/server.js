@@ -1,13 +1,13 @@
-const express=require('express');
+const express = require('express');
+const usersRoutes = require('./routes/users');
 
-class Server{
+class Server {
     constructor(){
-        this.app=express();
-        this.port= 3000;
+        this.app = express();
+        this.port = 3000;
 
         this.middlewares();
         this.routes();
-
     }
 
     middlewares(){
@@ -15,17 +15,14 @@ class Server{
     }
 
     routes(){
-    
+        this.app.use('/users', usersRoutes);
     }
 
     start(){
-
-        this.app.listen(this.port, ()=>{
-            console.log(`Servers is running on port ${this.port}`);
-
+        this.app.listen(this.port, () => {
+        console.log(`Server is running on port ${this.port}`);
         });
-    
     }
 }
 
-module.exports=Server;
+module.exports = Server;
