@@ -27,3 +27,6 @@ Content-Type: application/json
 ###
 //eliminar
 DELETE http://localhost:3000/pokemons/155
+
+###
+GET  http://localhost:3000/pokemons/play

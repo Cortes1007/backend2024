@@ -169,6 +169,7 @@ const destroyUser = async (req = resquest, res = response) => {
     }finally{
         if (conn) conn.end();
     }
+
 }
 
 
