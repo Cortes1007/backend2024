@@ -1,9 +1,18 @@
 const {request, response} = require('express');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const pool = require('../db/connection');
 const userQueries = require('../models/users');
 
+require('dotenv').config();
+
+const secret = process.env.SECRET;
+
 const SALT_ROUNDS = 10;
+
+const userProtected = async (req =request, res = response) => {
+    res.send({message: "You have access"});
+}
 
 const getAllUsers = async (req = request, res = response) => {
     let conn;
@@ -51,7 +60,7 @@ const createUser = async (req = request, res = response) => {
     const newUser = await conn.query(userQueries.addUser, [first_name, last_name, email, hashedPassword]);
 
     if(newUser.affectedRows === 0) {
-        res.status(500.).send({message: 'Error adding user'});
+        res.status(500).send({message: 'Error adding user'});
         return;
     }
 
@@ -169,7 +178,6 @@ const destroyUser = async (req = resquest, res = response) => {
     }finally{
         if (conn) conn.end();
     }
-
 }
 
 
@@ -178,5 +186,6 @@ module.exports = {
     createUser,
     getUser,
     updateUser,
-    destroyUser
+    destroyUser,
+    userProtected
 };
